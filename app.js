@@ -11,11 +11,12 @@ require('dotenv').config();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function () {
  
- console.log('hi')
+
   //Routes 
   app.post('/register', (req,res) => {
     console.log(req.body)
@@ -32,18 +33,15 @@ db.once('open', function () {
     })
 
     newUser.save((err) =>{
-      if (err) res.send(err)
+      if (err)  res.send(err)
       else res.json(newUser)
     })
 
   })
 
 
-  app.get('/tommy', async (req,res) => {
-     
-    const result = await User.findOne({name:'tommy'})
-    res.json(result)
-  })
 })
+
+
 
 module.exports = app
