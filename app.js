@@ -5,7 +5,6 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const db = mongoose.connection;
 
-
 //Middleware
 app.use(express.static('public'))
 require('dotenv').config();
@@ -24,8 +23,6 @@ const header = {
 }
 
 const token = jwt.sign(payload, process.env.SECRET, header);
-
-
 
 mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
 db.on('error', console.error.bind(console, 'connection error:'));
