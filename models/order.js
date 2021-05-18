@@ -7,7 +7,6 @@ const orderSchema = mongoose.Schema({
     
     items: [{
         type: mongoose.Schema.Types.ObjectId,
-    
         ref: 'Product'
     }],
     orderValue: Number 
