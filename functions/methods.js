@@ -1,21 +1,30 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-let payload;
 
-const createToken = (value, secret) => {
-  payload = {}
-  return jwt.sign(payload, secret)
+const createToken = (value) => {
+  const payload = {
+    userId: value._id, 
+    role: "costumer",
+    exp: (Date.now() / 1000) + (60 * 60)
+  }
+
+  const header = {
+    algorithm: process.env.HEADER_ALG
+  }
+
+  const token = jwt.sign(payload, process.env.SECRET, header);
+  return token;
 }
 
 
-const hashGenerator = (myPlaintext) => {
+const hashGenerator = (passWord) => {
   const saltRounds = 10;
-  const hash = bcrypt.hashSync(myPlaintext, saltRounds);
+  const hash = bcrypt.hashSync(passWord, saltRounds);
   return hash
 }
 
-const deCryptHash = (myPlaintext, hash,) => {
-  const showTheTruth = bcrypt.compare(myPlaintext, hash)
+const deCryptHash = (passWord, hash,) => {
+  const showTheTruth = bcrypt.compare(passWord, hash)
   return showTheTruth
 }
 
