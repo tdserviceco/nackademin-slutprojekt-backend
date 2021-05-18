@@ -23,7 +23,7 @@ const hashGenerator = (passWord) => {
   return hash
 }
 
-const deCryptHash = (passWord, hash,) => {
+const deCryptHash = (passWord, hash) => {
   const showTheTruth = bcrypt.compare(passWord, hash)
   return showTheTruth
 }

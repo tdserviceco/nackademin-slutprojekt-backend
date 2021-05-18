@@ -3,6 +3,7 @@ const app = express()
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const { createToken, deCryptHash, hashGenerator } = require('./functions/methods');
 const db = mongoose.connection;
 
 //Middleware
