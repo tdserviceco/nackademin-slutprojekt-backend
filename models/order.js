@@ -1,8 +1,12 @@
 const mongoose = require('mongoose')
 
-const orderSchema = mongoose.Schema({
-    _id: mongoose.Types.ObjectId,
-    timeStamp: Date.now(),
+const orderSchema = new mongoose.Schema({
+    
+    timeStamp: {
+        type:Date,
+        default:Date.now(),
+    },
+
     status: String,
     
     items: [{
