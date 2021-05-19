@@ -1,14 +1,12 @@
 const mongoose = require('mongoose')
 
 const productSchema = new mongoose.Schema({
-  
     title: String,
-    price : Number,
+    price: Number,
     shortDesc: String,
     longDesc: String,
     imgFile: String,
-    
-    
+    serial: String
 })
 
 const Product = mongoose.model('Product', productSchema)
