@@ -3,11 +3,11 @@ const app = express()
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const {register, auth} = require('./functions/routes')
 const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./functions/methods');
 const db = mongoose.connection;
-const User = require('./models/user')
-const Product = require('./models/product')
-const Order = require('./models/order')
+
+
 
 //Middleware
 app.use(express.static('public'))
@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-let tokenInCookies = '';
+
 
 const connection = () => {
   mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true});
@@ -25,35 +25,18 @@ const connection = () => {
 
 
     //Routes 
-
+   
     // for register user 
-    app.post('/api/register', async (req, res) => {
-      const user = await User.findOne({email: req.body.email});
+    app.post('/api/register', register ) 
+     
 
-      if(!user){
-        const newUser = new User({
-            email: req.body.email,
-            name: req.body.name,
-            password: hashGenerator(req.body.password),
-            adress: {
-              street: req.body.street,
-              zip: req.body.zip,
-              city: req.body.city
-            }
-        })
-
-        newUser.save((err) => {
-        err ? res.send(err) : res.json(newUser)
-        })
-      }
-      else {
-        res.json({msg: "Email already taken"});
-      }
-
-    })
-
+      
+    
     //for sign in
-    app.post('/api/auth', async (req, res) => {
+
+    app.post('/api/auth', auth)
+    /* async (req, res) => {
+    
         const user = await User.findOne({ 
           email: req.body.email
         });
@@ -66,7 +49,7 @@ const connection = () => {
             res.json({msg: "Login failed. Invalid credentials."});
         }
     });
-
+ */
     // add product 
     //only access for admins
     app.post('/api/products', (req, res) => {
