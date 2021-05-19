@@ -3,7 +3,7 @@ const app = express()
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-const {register, auth, products} = require('./functions/routes')
+const {register, auth, products, orders} = require('./functions/routes')
 const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./functions/methods');
 const db = mongoose.connection;
 
@@ -129,7 +129,8 @@ const connection = () => {
     })
 
     //post orders
-    app.post('/api/orders', (req, res) => {
+    app.post('/api/orders', orders)
+    /* (req, res) => {
         const token = req.cookies["auth-token"];
     
         if (token === tokenInCookies){
@@ -151,7 +152,7 @@ const connection = () => {
             res.json({msg: "Please, log in"});
         }
     })
-
+ */
     //get all Orders
     app.get('/api/orders', async (req, res) => {
       const allOrders = await Order.find({})

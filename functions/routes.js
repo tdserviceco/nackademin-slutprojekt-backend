@@ -86,9 +86,33 @@ const products = async (req, res, next) =>{
   }
 } 
 
+const orders = async (req, res, next) =>{
+  
+  const token = req.cookies["auth-token"];
+    
+  if (token === tokenInCookies){
+      const userPayload = verifyToken(token);
+
+      const postOrder = new Order({
+                  status: req.body.status,
+                  items: req.body.items,
+                  buyer: userPayload.userId,
+                  orderValue: req.body.items.length
+      });
+
+      postOrder.save((err) => {
+          if (err) console.error(err);
+          res.json(postOrder);
+      });
+
+  } else {
+      res.json({msg: "Please, log in"});
+  }
+
+};
 
 
 
 
 
-module.exports = {register, auth, products}
+module.exports = {register, auth, products, orders }
