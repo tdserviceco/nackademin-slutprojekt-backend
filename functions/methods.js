@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const createToken = (value) => {
   const payload = {
     userId: value._id, 
-    role: "costumer",
+    role: value.role,
     exp: (Date.now() / 1000) + (60 * 60)
   }
 
@@ -28,4 +28,11 @@ const deCryptHash = (passWord, hash) => {
   return showTheTruth
 }
 
-module.exports = { createToken, deCryptHash, hashGenerator }
+const verifyToken = (token) => {
+  return jwt.verify(token, process.env.SECRET, (err, payload) => {
+    if (err) return console.error(err);
+    return payload;
+  })
+}
+
+module.exports = { createToken, deCryptHash, hashGenerator, verifyToken }
