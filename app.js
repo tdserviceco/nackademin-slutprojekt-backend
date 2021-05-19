@@ -39,8 +39,7 @@ const connection = () => {
       })
 
       newUser.save((err) => {
-        if (err) res.send(err)
-        else res.json(newUser)
+        err ? res.send(err) : res.json(newUser)
       })
 
     })
