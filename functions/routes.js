@@ -41,18 +41,22 @@ const auth = async (req, res, next)=> {
     const user = await User.findOne({ 
       email: req.body.email
         });
-       console.log(req.body.password, user.password)
-        /* let password = await deCryptHash(req.body.password, user.password).then(response =>{ return response})
-        console.log('end of line: ', password, user.password)
-        if(user && password) {
+        if(user === null){
+          res.status(403).send('no one with that mail')
+        }else{
+          let password = await deCryptHash(req.body.password, user.password).then(response =>{ return response})
+      if(password) {
             const token = createToken(user);
             res.cookie('auth-token', token);
             tokenInCookies = token;
             res.json({msg: "You're logged in!"});
         } else {
-            res.json({msg: "Login failed. Invalid credentials."});
+            res.status(403).json({msg: "Login failed. Invalid credentials."});
         }
-       */
+        }
+
+         
+       
       };
 
 
