@@ -29,14 +29,14 @@ const register = async (req, res, next) => {
 }
 
 const auth = async (req, res, next) => {
-
   const user = await User.findOne({
     email: req.body.email
   });
 
   if (user === null) { // Försäkrar att användaren inte är icke-existerande (Null)
     res.status(403).json({ msg: "Login failed. Invalid credentials." })
-  } else {
+  }
+  else {
     let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna
     if (password) {
       const token = createToken(user);
@@ -85,7 +85,6 @@ const products = async (req, res, next) => {
 }
 
 const orders = async (req, res, next) => {
-
   const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
@@ -95,7 +94,7 @@ const orders = async (req, res, next) => {
       buyer: userPayload.userId,
       orderValue: ''
     });
-   
+
     postOrder.save((err) => {
       if (err) console.error(err);
     });
@@ -103,28 +102,25 @@ const orders = async (req, res, next) => {
     const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
     const getItems = getOrder.items
 
-
-
     // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
     let totalPrice = getItems.reduce((acc, current) => {
-      return acc + current.price 
-    },0)
+      return acc + current.price
+    }, 0)
 
-    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, {$set: {orderValue: totalPrice + ' Sek'}});
-    const user = await User.findById(userPayload.userId); 
-    
+    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice + ' Sek' } });
+    const user = await User.findById(userPayload.userId);
+
     user.orderhistory.push(postOrder._id);
 
     user.save((err) => {
       if (err) console.error(err)
     })
-    
+
     res.status(202).json(saveOrder);
 
-    } else {
+  } else {
     res.status(403).json({ msg: "Please, log in" });
-    }
-
+  }
 };
 
 // Hämtar alla produkter

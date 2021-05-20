@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 const createToken = (value) => {
   const payload = {
-    userId: value._id, 
+    userId: value._id,
     role: value.role,
     exp: (Date.now() / 1000) + (60 * 60)
   }
@@ -15,7 +15,6 @@ const createToken = (value) => {
   const token = jwt.sign(payload, process.env.SECRET, header);
   return token;
 }
-
 
 const hashGenerator = (passWord) => {
   const saltRounds = 10;
