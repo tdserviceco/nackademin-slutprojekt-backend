@@ -100,9 +100,9 @@ const orders = async (req, res, next) => {
       if (err) console.error(err);
     });
 
-    postOrder.populate('items') // Hämtar samma order-objekt efter att den sparats
-    const getItems = postOrder.items
-    console.log(postOrder)
+    const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
+    const getItems = getOrder.items
+
 
 
     // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
@@ -111,12 +111,10 @@ const orders = async (req, res, next) => {
     },0)
 
     const saveOrder = await Order.findByIdAndUpdate(postOrder._id, {$set: {orderValue: totalPrice + ' Sek'}});
-    console.log(postOrder)
     const user = await User.findById(userPayload.userId); 
     
     user.orderhistory.push(postOrder._id);
-    console.log('user', user)
-    console.log('orderhistory', user.orderhistory)
+
     user.save((err) => {
       if (err) console.error(err)
     })
