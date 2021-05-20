@@ -3,14 +3,12 @@ const admin = 'admin';
 const User = require('../models/user')
 const Product = require('../models/product')
 const Order = require('../models/order')
-const jwt = require('jsonwebtoken');
 const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./methods');
 
 const register = async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    console.log(req.body);
     const newUser = new User({
       email: req.body.email,
       name: req.body.name,
@@ -65,7 +63,7 @@ const products = async (req, res, next) => {
         price: req.body.price,
         shortDesc: req.body.shortDesc,
         longDesc: req.body.longDesc,
-        imgFile: req.body.imgFile,
+        imgFile: req.body.image,
         serial: req.body.serial
       })
       newProduct.save((err) => {
@@ -109,17 +107,17 @@ const orders = async (req, res, next) => {
 
 };
 
-const allProducts = (req, res, next) => {
+const allProducts = async (req, res, next) => {
   const products = await Product.find({})
   res.json(products)
 }
 
-const productById = (req, res, next) => {
+const productById = async (req, res, next) => {
   const product = await Product.findById(req.params.id)
   res.json(product)
 }
 
-const removeProduct = (req, res, next) => {
+const removeProduct = async (req, res, next) => {
   const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
@@ -134,7 +132,7 @@ const removeProduct = (req, res, next) => {
   }
 }
 
-const updateProduct = (res, req, next) => {
+const updateProduct = async (res, req, next) => {
   const token = req.cookies["auth-token"];
 
   if (token === tokenInCookies) {
@@ -151,7 +149,7 @@ const updateProduct = (res, req, next) => {
 }
 
 
-const allOrders = (req, res, next) => {
+const allOrders = async (req, res, next) => {
   const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
@@ -161,4 +159,4 @@ const allOrders = (req, res, next) => {
     res.json({ msg: "Please, log in" });
   }
 }
-module.exports = { register, auth, products, orders, allProducts, allOrders, productById, removeProduct }
+module.exports = { register, auth, products, orders, allProducts, allOrders, productById, removeProduct, updateProduct }

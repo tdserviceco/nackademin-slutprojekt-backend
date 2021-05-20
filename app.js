@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
-const { register, auth, products, orders, allProducts, allOrders, productById, removeProduct } = require('./functions/routes')
+const { register, auth, products, orders, allProducts, allOrders, productById, removeProduct, updateProduct } = require('./functions/routes')
 const db = mongoose.connection;
 
 //Middleware
@@ -22,6 +22,7 @@ const connection = () => {
         app.get('/api/products/:id', productById)
         app.get('/api/products', allProducts)
         app.get('/api/orders', allOrders)
+
         /** POST ROUTES */
         app.post('/api/products', products)
         app.post('/api/register', register)
