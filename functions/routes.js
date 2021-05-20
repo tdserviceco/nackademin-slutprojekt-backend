@@ -6,29 +6,24 @@ const Order = require('../models/order')
 const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./methods');
 
 const register = async (req, res, next) => {
-  console.log(req.body.email)
-  const user = await User.findOne(
-    { email: req.body.email });
+  const user = await User.findOne({email: req.body.email});
 
-  if (!user) {
-    const newUser = new User({
-      email: req.body.email,
-      name: req.body.name,
-      password: hashGenerator(req.body.password),
-      adress: {
-        street: req.body.street,
-        zip: req.body.zip,
-        city: req.body.city
+      if(!user){
+            console.log(req.body);
+            const newUser = new User({
+            email: req.body.email,
+            name: req.body.name,
+            password: hashGenerator(req.body.password),
+            adress: req.body.adress
+        });
+
+        newUser.save((err) => {
+        err ? res.status(403).send(err) : res.status(202).json(newUser)
+        })
       }
-    })
-
-    newUser.save((err) => {
-      err ? res.send(err) : res.json(newUser)
-    })
-  }
-  else {
-    res.json({ msg: "Email already taken" });
-  }
+      else {
+        res.json({msg: "Email already taken"});
+      }
 
 }
 
@@ -46,7 +41,12 @@ const auth = async (req, res, next) => {
       const token = createToken(user);
       res.cookie('auth-token', token);
       tokenInCookies = token;
-      res.json({ msg: "You're logged in!" });
+      const copyUser = await User.findOne(user).select(['-password']);
+
+      res.status(202).json({
+          token: token, 
+          user: copyUser
+      });
     } else {
       res.status(403).json({ msg: "Login failed. Invalid credentials." });
     }
@@ -58,7 +58,8 @@ const products = async (req, res, next) => {
 
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
-    if (userPayload.role == 'Admin') {
+
+    if (userPayload.role == 'admin') {
       const newProduct = new Product({
         title: req.body.title,
         price: req.body.price,
@@ -67,15 +68,14 @@ const products = async (req, res, next) => {
         imgFile: req.body.imgFile,
         serial: req.body.serial
       })
-
       newProduct.save((err) => {
-        err ? res.send(err) : res.json(newProduct)
+        err ? res.status(403).send(err) : res.status(202).json({newProduct: newProduct});
       });
     } else {
-      res.json({ msg: 'Unauthorized' });
+      res.status(403).json({ msg: 'Unauthorized' });
     }
   } else {
-    res.json({ msg: 'Please, log in' })
+    res.status(403).json({ msg: 'Please, log in' })
   }
 }
 
@@ -87,20 +87,26 @@ const orders = async (req, res, next) => {
     const userPayload = verifyToken(token);
 
     const postOrder = new Order({
-      status: req.body.status,
-      items: req.body.items,
-      buyer: userPayload.userId,
-      orderValue: req.body.items.length
+        status: req.body.status,
+        items: req.body.items,
+        buyer: userPayload.userId,
+        orderValue: req.body.items.length
     });
-
+    const orderValue = postOrder.items;
+    let total =[];
+    orderValue.forEach(element => {
+        total.push(element.price)
+    });
+    console.log(total)
+    console.log(orderValue)
     postOrder.save((err) => {
-      if (err) console.error(err);
-      res.json(postOrder);
+        if (err) console.error(err);
+        res.status(202).json(postOrder);
     });
 
-  } else {
-    res.json({ msg: "Please, log in" });
-  }
+    } else {
+        res.status(403).json({msg: "Please, log in"});
+    }
 
 };
 module.exports = { register, auth, products, orders }
