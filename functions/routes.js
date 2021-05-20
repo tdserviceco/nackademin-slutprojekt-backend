@@ -86,27 +86,34 @@ const orders = async (req, res, next) => {
   const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
-
     const postOrder = new Order({
       status: req.body.status,
       items: req.body.items,
       buyer: userPayload.userId,
-      orderValue: req.body.items.length
+      orderValue: 0
     });
-    const orderValue = postOrder.items;
-    let total = [];
-    orderValue.forEach(element => {
-      total.push(element.price)
-    });
-
+   
     postOrder.save((err) => {
       if (err) console.error(err);
-      res.status(202).json(postOrder);
     });
 
-  } else {
+    const getOrder = await Order.findOne(postOrder).populate('items')
+    const getValue =getOrder.items
+    
+    let total =getValue.reduce((acc, current) => {
+      return acc + current.price 
+    },0)
+
+    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, {$set: {orderValue: total}})
+
+    saveOrder.save((err)=>{
+      if (err) console.error(err);
+      res.status(202).json(saveOrder);
+    })
+
+    } else {
     res.status(403).json({ msg: "Please, log in" });
-  }
+    }
 
 };
 
