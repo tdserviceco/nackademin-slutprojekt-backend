@@ -39,6 +39,10 @@ const auth = async (req, res, next) => {
       const token = createToken(user);
       res.cookie('auth-token', token);
       tokenInCookies = token;
+
+      /** Vi kopierar ny användare och sedan ta 
+       *  bort password fält för vi vill inte visa 
+       *  den på frontend delen. */
       const copyUser = await User.findOne(user).select(['-password']);
 
       res.status(202).json({
@@ -63,11 +67,11 @@ const products = async (req, res, next) => {
         price: req.body.price,
         shortDesc: req.body.shortDesc,
         longDesc: req.body.longDesc,
-        imgFile: req.body.image,
+        imgFile: req.body.imgFile,
         serial: req.body.serial
       })
       newProduct.save((err) => {
-        err ? res.status(403).send(err) : res.status(202).json({ newProduct: newProduct });
+        err ? res.status(403).send(err) : res.status(202).json({ product: newProduct });
       });
     } else {
       res.status(403).json({ msg: 'Unauthorized' });
@@ -94,8 +98,7 @@ const orders = async (req, res, next) => {
     orderValue.forEach(element => {
       total.push(element.price)
     });
-    console.log(total)
-    console.log(orderValue)
+
     postOrder.save((err) => {
       if (err) console.error(err);
       res.status(202).json(postOrder);
