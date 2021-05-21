@@ -138,6 +138,7 @@ const productById = async (req, res, next) => {
 
 //Tar bort produkt
 const removeProduct = async (req, res, next) => {
+  console.log(req.body, req.params)
   const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
@@ -153,20 +154,22 @@ const removeProduct = async (req, res, next) => {
 }
 
 // Updaterar produkt
-const updateProduct = async (res, req, next) => {
-  const token = req.cookies["auth-token"];
-
-  if (token === tokenInCookies) {
+const updateProduct = async (req, res, next) => {
+    
+   const token = req.cookies["auth-token"];
+  
+   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     if (userPayload.role == admin) {
       const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: { price: req.body.price } })
+      console.log(updateProduct)
       res.json(updateProduct);
     } else {
       res.json({ msg: 'Unauthorized' })
     }
   } else {
     res.json({ msg: "Please, log in" });
-  }
+  } 
 }
 
 // Hämtar alla beställningar
