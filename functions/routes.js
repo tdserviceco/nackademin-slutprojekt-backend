@@ -45,7 +45,8 @@ const auth = async (req, res, next) => {
 
       /** Vi kopierar ny användare och sedan exkluderar 
        *  password-fältet för vi vill inte visa 
-       *  den på frontend delen. */
+       *  den på frontend delen. 
+       * */
       const copyUser = await User.findOne(user).select(['-password']);
 
       res.status(202).json({
