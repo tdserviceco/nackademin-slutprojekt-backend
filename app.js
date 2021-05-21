@@ -2,7 +2,11 @@ const express = require('express')
 const app = express()
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
-const { register, auth, products, orders, allProducts, allOrders, productById, removeProduct, updateProduct } = require('./functions/routes')
+const {
+    register, auth, products, orders,
+    allProducts, allOrders, productById,
+    removeProduct, updateProduct
+} = require('./functions/routes')
 const db = mongoose.connection;
 
 //Middleware
@@ -17,7 +21,8 @@ const connection = () => {
     db.on('error', console.error.bind(console, 'connection error:'));
     db.once('open', function () {
 
-        //Routes 
+        /** Routes with GET/POST/PATCH/DELETE */
+
         /** GET ROUTES */
         app.get('/api/products/:id', productById)
         app.get('/api/products', allProducts)
@@ -29,12 +34,11 @@ const connection = () => {
         app.post('/api/auth', auth)
         app.post('/api/orders', orders)
 
-        /** DELETE ROUTES */
-        app.delete('/api/products/:id', removeProduct)
-
         /** PATCH ROUTES */
         app.patch('/api/products/:id', updateProduct)
 
+        /** DELETE ROUTES */
+        app.delete('/api/products/:id', removeProduct)
     })
 }
 module.exports = { app, connection }
