@@ -18,7 +18,6 @@ const register = async (req, res, next) => {
       password: hashGenerator(req.body.password), // krypterar lösenordet
       adress: req.body.adress
     });
-
     newUser.save((err) => {
       err ? res.status(403).send(err) : res.status(202).json(newUser)
     })
@@ -37,7 +36,8 @@ const auth = async (req, res, next) => {
     res.status(403).json({ msg: "Login failed. Invalid credentials." })
   }
   else {
-    let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna
+    let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
+
     if (password) {
       const token = createToken(user);
       res.cookie('auth-token', token);
@@ -48,7 +48,6 @@ const auth = async (req, res, next) => {
        *  den på frontend delen. 
        * */
       const copyUser = await User.findOne(user).select(['-password']);
-
       res.status(202).json({
         token: token,
         user: copyUser
@@ -61,10 +60,8 @@ const auth = async (req, res, next) => {
 
 const products = async (req, res, next) => {
   const token = req.cookies["auth-token"];
-
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token); // Verifierar token
-
     if (userPayload.role == admin) {
       const newProduct = new Product({
         title: req.body.title,
@@ -75,7 +72,7 @@ const products = async (req, res, next) => {
         serial: req.body.serial
       })
       newProduct.save((err) => {
-        err ? res.status(403).send(err) : res.status(202).json({ product: newProduct });
+        err ? res.status(403).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
       });
     } else {
       res.status(403).json({ msg: 'Unauthorized' });
@@ -87,6 +84,7 @@ const products = async (req, res, next) => {
 
 const orders = async (req, res, next) => {
   const token = req.cookies["auth-token"];
+
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     const postOrder = new Order({
@@ -95,30 +93,22 @@ const orders = async (req, res, next) => {
       buyer: userPayload.userId,
       orderValue: ''
     });
-
     postOrder.save((err) => {
       if (err) console.error(err);
     });
-
     const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
     const getItems = getOrder.items
-
     // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
-
     const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice + ' Sek' } });
     const user = await User.findById(userPayload.userId);
-
-    user.orderhistory.push(postOrder._id);
-
+    user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
     user.save((err) => {
       if (err) console.error(err)
     })
-
     res.status(202).json(saveOrder);
-
   } else {
     res.status(403).json({ msg: "Please, log in" });
   }
@@ -140,6 +130,7 @@ const productById = async (req, res, next) => {
 const removeProduct = async (req, res, next) => {
   console.log(req.body, req.params)
   const token = req.cookies["auth-token"];
+
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     if (userPayload.role == admin) {
@@ -154,15 +145,15 @@ const removeProduct = async (req, res, next) => {
 }
 
 // Updaterar produkt
-const updateProduct = async (req, res, next) => {
-    
+const updateProduct = async (req, res, next) => { 
    const token = req.cookies["auth-token"];
-  
    if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     if (userPayload.role == admin) {
-      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: { price: req.body.price } })
-      console.log(updateProduct)
+      const modifiedProduct = {...req.body};
+      delete modifiedProduct._id;
+      delete modifiedProduct.__v;
+      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct});
       res.json(updateProduct);
     } else {
       res.json({ msg: 'Unauthorized' })
@@ -184,4 +175,5 @@ const allOrders = async (req, res, next) => {
     res.json({ msg: "Please, log in" });
   }
 }
+
 module.exports = { register, auth, products, orders, allProducts, allOrders, productById, removeProduct, updateProduct }
