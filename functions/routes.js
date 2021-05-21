@@ -33,7 +33,7 @@ const auth = async (req, res, next) => {
     email: req.body.email
   });
 
-  if (user === null) { // Försäkrar att användaren inte är icke-existerande (Null)
+  if (!user) { // Försäkrar att användaren inte är icke-existerande (Null)
     res.status(403).json({ msg: "Login failed. Invalid credentials." })
   }
   else {
