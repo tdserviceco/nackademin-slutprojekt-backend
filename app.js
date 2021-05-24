@@ -19,7 +19,7 @@ app.use(cookieParser());
 const connection = () => {
     mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
     db.on('error', console.error.bind(console, 'connection error:'));
-    db.once('open', function () {
+    db.once('open', () => {
 
         /** Routes with GET/POST/PATCH/DELETE */
 
