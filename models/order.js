@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    orderValue: String
+    orderValue: Number
 
 })
 

@@ -102,7 +102,7 @@ const orders = async (req, res, next) => {
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
-    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice + ' Sek' } });
+    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
     const user = await User.findById(userPayload.userId);
     user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
     user.save((err) => {
