@@ -13,10 +13,12 @@ const register = async (req, res, next) => {
 
   if (!user) { // Ifall adressen INTE redan är registrerad, så kan den användas
     const newUser = new User({
-      email: req.body.email,
-      name: req.body.name,
-      password: hashGenerator(req.body.password), // krypterar lösenordet
-      adress: req.body.adress
+      user: {
+        email: req.body.email,
+        name: req.body.name,
+        password: hashGenerator(req.body.password), // krypterar lösenordet
+        adress: req.body.adress
+      }
     });
     newUser.save((err) => {
       err ? res.status(403).send(err) : res.status(202).json(newUser)
@@ -28,18 +30,19 @@ const register = async (req, res, next) => {
 }
 
 const auth = async (req, res, next) => {
-  const user = await User.findOne({
-    email: req.body.email
+  const account = await User.findOne({
+    'user.email': req.body.email
   });
 
-  if (!user) { // Försäkrar att användaren inte är icke-existerande (Null)
+  if (!account) { // Försäkrar att användaren inte är icke-existerande (Null)
     res.status(403).json({ msg: "Login failed. Invalid credentials." })
+
   }
   else {
-    let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
+    let password = await deCryptHash(req.body.password, account.user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
 
     if (password) {
-      const token = createToken(user);
+      const token = createToken(account.user);
       res.cookie('auth-token', token);
       tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
 
@@ -47,10 +50,19 @@ const auth = async (req, res, next) => {
        *  password-fältet för vi vill inte visa 
        *  den på frontend delen. 
        * */
-      const copyUser = await User.findOne(user).select(['-password']);
+      const copyAccount = await User.findOne({ 'user.email': account.user.email }).select(['-password']);
+
       res.status(202).json({
         token: token,
-        user: copyUser
+        user: {
+          name: copyAccount.user.name,
+          role: copyAccount.user.role,
+          adress: {
+            street: copyAccount.user.adress.street,
+            zip: copyAccount.user.adress.zip,
+            city: copyAccount.user.adress.city
+          }
+        }
       });
     } else {
       res.status(403).json({ msg: "Login failed. Invalid credentials." });
@@ -83,21 +95,22 @@ const products = async (req, res, next) => {
 }
 
 const orders = async (req, res, next) => {
-  const token = req.cookies["auth-token"];
+  console.log(req.body)
 
+  const token = req.cookies["auth-token"];
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     const postOrder = new Order({
       status: req.body.status,
       items: req.body.items,
       buyer: userPayload.userId,
-      orderValue: ''
+      orderValue: 0
     });
+
     postOrder.save((err) => {
       if (err) console.error(err);
     });
-    const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
-    const getItems = getOrder.items
+
     // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
@@ -107,6 +120,7 @@ const orders = async (req, res, next) => {
     user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
     user.save((err) => {
       if (err) console.error(err)
+      console.log(3)
     })
     res.status(202).json(saveOrder);
   } else {
@@ -128,7 +142,6 @@ const productById = async (req, res, next) => {
 
 //Tar bort produkt
 const removeProduct = async (req, res, next) => {
-  console.log(req.body, req.params)
   const token = req.cookies["auth-token"];
 
   if (token === tokenInCookies) {
@@ -145,22 +158,22 @@ const removeProduct = async (req, res, next) => {
 }
 
 // Updaterar produkt
-const updateProduct = async (req, res, next) => { 
-   const token = req.cookies["auth-token"];
-   if (token === tokenInCookies) {
+const updateProduct = async (req, res, next) => {
+  const token = req.cookies["auth-token"];
+  if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     if (userPayload.role == admin) {
-      const modifiedProduct = {...req.body};
+      const modifiedProduct = { ...req.body };
       delete modifiedProduct._id;
       delete modifiedProduct.__v;
-      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct});
+      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct });
       res.json(updateProduct);
     } else {
       res.json({ msg: 'Unauthorized' })
     }
   } else {
     res.json({ msg: "Please, log in" });
-  } 
+  }
 }
 
 // Hämtar alla beställningar
@@ -169,7 +182,7 @@ const allOrders = async (req, res, next) => {
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     // Gör så att bara en Admin kan se alla beställningar, men en vanlig användare kan bara se sina egna beställningar.
-    const orders = (userPayload.role == admin) ? await Order.find({}) : await Order.find({ buyer: userPayload.userId });
+    const orders = (userPayload.role === admin) ? await Order.find({}) : await Order.find({ buyer: userPayload.userId });
     res.json(orders);
   } else {
     res.json({ msg: "Please, log in" });

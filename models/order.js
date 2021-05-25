@@ -1,6 +1,5 @@
 const mongoose = require('mongoose')
 const orderSchema = new mongoose.Schema({
-
     timeStamp: {
         type: Date,
         default: Date.now(),
@@ -15,7 +14,6 @@ const orderSchema = new mongoose.Schema({
         ref: 'User'
     },
     orderValue: Number
-
 })
 
 const Order = mongoose.model('Order', orderSchema)
