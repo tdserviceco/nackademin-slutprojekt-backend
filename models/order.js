@@ -4,7 +4,10 @@ const orderSchema = new mongoose.Schema({
         type: Date,
         default: Date.now(),
     },
-    status: String,
+    status: {
+        type: String,
+        default: 'packing'
+    },
     items: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product'

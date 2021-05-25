@@ -42,7 +42,7 @@ const auth = async (req, res, next) => {
     let password = await deCryptHash(req.body.password, account.user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
 
     if (password) {
-      const token = createToken(account.user);
+      const token = createToken(account);
       res.cookie('auth-token', token);
       tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
 
@@ -95,11 +95,9 @@ const products = async (req, res, next) => {
 
 const orders = async (req, res, next) => {
   const token = req.cookies["auth-token"];
-  console.log(token)
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     const postOrder = new Order({
-      status: req.body.status,
       items: req.body.items,
       buyer: userPayload.userId,
       orderValue: 0
@@ -116,14 +114,11 @@ const orders = async (req, res, next) => {
       return acc + current.price
     }, 0)
     const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
-    console.log(userPayload.userId)
     const account = await User.findById(userPayload.userId);
-    // account.user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
-    // account.user.save((err) => {
-    //   if (err) console.error(err)
-    // })
-    console.log(account)
-    res.status(202).json(saveOrder);
+    account.user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
+    account.save((err) => {
+      err ? console.error(err) : res.status(202).json(saveOrder)
+    })
   } else {
     res.status(403).json({ msg: "Please, log in" });
   }

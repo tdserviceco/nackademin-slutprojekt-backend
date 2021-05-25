@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const createToken = (value) => {
   const payload = {
     userId: value._id,
-    role: value.role,
+    role: value.user.role,
     exp: (Date.now() / 1000) + (60 * 60)
   }
 
