@@ -25,7 +25,7 @@ const register = async (req, res, next) => {
     })
   }
   else {
-    res.json({ msg: "Email already taken" });
+    res.status(403).send("Email already taken");
   }
 }
 
@@ -35,7 +35,7 @@ const auth = async (req, res, next) => {
   });
 
   if (!account) { // Försäkrar att användaren inte är icke-existerande (Null)
-    res.status(403).json({ msg: "Login failed. Invalid credentials." })
+    res.status(403).send("Login failed. Invalid credentials.")
 
   }
   else {
@@ -64,7 +64,7 @@ const auth = async (req, res, next) => {
         }
       });
     } else {
-      res.status(403).json({ msg: "Login failed. Invalid credentials." });
+      res.status(403).send('Login failed. Invalid credentials.');
     }
   }
 };
@@ -86,10 +86,10 @@ const products = async (req, res, next) => {
         err ? res.status(403).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
       });
     } else {
-      res.status(403).json({ msg: 'Unauthorized' });
+      res.status(403).send('Unauthorized');
     }
   } else {
-    res.status(403).json({ msg: 'Please, log in' })
+    res.status(403).send('Please, log in')
   }
 }
 
@@ -120,7 +120,7 @@ const orders = async (req, res, next) => {
       err ? console.error(err) : res.status(202).json(saveOrder)
     })
   } else {
-    res.status(403).json({ msg: "Please, log in" });
+    res.status(403).send("Please, log in");
   }
 };
 
@@ -146,10 +146,10 @@ const removeProduct = async (req, res, next) => {
       const removeProduct = await Product.deleteOne({ _id: req.params.id });
       res.json(removeProduct);
     } else {
-      res.json({ msg: 'Unauthorized' })
+      res.send('Unauthorized')
     }
   } else {
-    res.json({ msg: "Please, log in" });
+    res.send("Please, log in");
   }
 }
 
@@ -165,10 +165,10 @@ const updateProduct = async (req, res, next) => {
       const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct });
       res.json(updateProduct);
     } else {
-      res.json({ msg: 'Unauthorized' })
+      res.send('Unauthorized')
     }
   } else {
-    res.json({ msg: "Please, log in" });
+    res.send("Please, log in");
   }
 }
 
@@ -181,7 +181,7 @@ const allOrders = async (req, res, next) => {
     const orders = (userPayload.role === admin) ? await Order.find({}) : await Order.find({ buyer: userPayload.userId });
     res.json(orders);
   } else {
-    res.json({ msg: "Please, log in" });
+    res.send('Please, log in');
   }
 }
 
