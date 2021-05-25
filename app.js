@@ -21,7 +21,7 @@ const connection = () => {
     db.on('error', console.error.bind(console, 'connection error:'));
     db.once('open', () => {
 
-        /** Routes with GET/POST/PATCH/DELETE */
+        console.log('Welcome to our server!')
 
         /** GET ROUTES */
         app.get('/api/products/:id', productById)

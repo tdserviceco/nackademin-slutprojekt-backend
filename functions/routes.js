@@ -9,7 +9,7 @@ const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./meth
 
 // Här registrerar man sitt användarkonto
 const register = async (req, res, next) => {
-  const user = await User.findOne({ email: req.body.email }); // Försäkrar att användar adressen inte redan är tagen.
+  const user = await User.findOne({ 'user.email': req.body.email }); // Försäkrar att användar adressen inte redan är tagen.
 
   if (!user) { // Ifall adressen INTE redan är registrerad, så kan den användas
     const newUser = new User({
@@ -51,7 +51,6 @@ const auth = async (req, res, next) => {
        *  den på frontend delen. 
        * */
       const copyAccount = await User.findOne({ 'user.email': account.user.email }).select(['-password']);
-
       res.status(202).json({
         token: token,
         user: {
@@ -95,9 +94,8 @@ const products = async (req, res, next) => {
 }
 
 const orders = async (req, res, next) => {
-  console.log(req.body)
-
   const token = req.cookies["auth-token"];
+  console.log(token)
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     const postOrder = new Order({
@@ -111,17 +109,20 @@ const orders = async (req, res, next) => {
       if (err) console.error(err);
     });
 
+    const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
+    const getItems = getOrder.items
     // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
     const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
-    const user = await User.findById(userPayload.userId);
-    user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
-    user.save((err) => {
-      if (err) console.error(err)
-      console.log(3)
-    })
+    console.log(userPayload.userId)
+    const account = await User.findById(userPayload.userId);
+    // account.user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
+    // account.user.save((err) => {
+    //   if (err) console.error(err)
+    // })
+    console.log(account)
     res.status(202).json(saveOrder);
   } else {
     res.status(403).json({ msg: "Please, log in" });
