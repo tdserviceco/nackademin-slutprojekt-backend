@@ -13,12 +13,10 @@ const register = async (req, res, next) => {
 
   if (!user) { // Ifall adressen INTE redan är registrerad, så kan den användas
     const newUser = new User({
-      user: {
-        email: req.body.email,
-        name: req.body.name,
-        password: hashGenerator(req.body.password), // krypterar lösenordet
-        adress: req.body.adress
-      }
+      email: req.body.email,
+      name: req.body.name,
+      password: hashGenerator(req.body.password), // krypterar lösenordet
+      adress: req.body.adress
     });
     newUser.save((err) => {
       err ? res.status(400).send(err) : res.status(202).json(newUser)
