@@ -1,11 +1,13 @@
 const mongoose = require('mongoose')
 const orderSchema = new mongoose.Schema({
-
     timeStamp: {
         type: Date,
         default: Date.now(),
     },
-    status: String,
+    status: {
+        type: String,
+        default: 'packing'
+    },
     items: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product'
@@ -15,7 +17,6 @@ const orderSchema = new mongoose.Schema({
         ref: 'User'
     },
     orderValue: Number
-
 })
 
 const Order = mongoose.model('Order', orderSchema)

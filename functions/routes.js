@@ -19,11 +19,14 @@ const register = async (req, res, next) => {
       adress: req.body.adress
     });
     newUser.save((err) => {
-      err ? res.status(403).send(err) : res.status(202).json(newUser)
+      const token = createToken(newUser);
+      res.cookie('auth-token', token);
+      tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
+      err ? res.status(400).send(err) : res.status(202).json({ user: newUser })
     })
   }
   else {
-    res.json({ msg: "Email already taken" });
+    res.status(400).send("Email already taken");
   }
 }
 
@@ -33,7 +36,8 @@ const auth = async (req, res, next) => {
   });
 
   if (!user) { // Försäkrar att användaren inte är icke-existerande (Null)
-    res.status(403).json({ msg: "Login failed. Invalid credentials." })
+    res.status(400).send("Login failed. Invalid credentials.")
+
   }
   else {
     let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
@@ -43,17 +47,20 @@ const auth = async (req, res, next) => {
       res.cookie('auth-token', token);
       tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
 
-      /** Vi kopierar ny användare och sedan exkluderar 
-       *  password-fältet för vi vill inte visa 
-       *  den på frontend delen. 
-       * */
-      const copyUser = await User.findOne(user).select(['-password']);
       res.status(202).json({
         token: token,
-        user: copyUser
+        user: {
+          name: user.name,
+          role: user.role,
+          adress: {
+            street: user.adress.street,
+            zip: user.adress.zip,
+            city: user.adress.city
+          }
+        }
       });
     } else {
-      res.status(403).json({ msg: "Login failed. Invalid credentials." });
+      res.status(400).send('Login failed. Invalid credentials.');
     }
   }
 };
@@ -72,45 +79,45 @@ const products = async (req, res, next) => {
         serial: req.body.serial
       })
       newProduct.save((err) => {
-        err ? res.status(403).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
+        err ? res.status(400).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
       });
     } else {
-      res.status(403).json({ msg: 'Unauthorized' });
+      res.status(400).send('Unauthorized');
     }
   } else {
-    res.status(403).json({ msg: 'Please, log in' })
+    res.status(400).send('Please, log in')
   }
 }
 
 const orders = async (req, res, next) => {
   const token = req.cookies["auth-token"];
-
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     const postOrder = new Order({
-      status: req.body.status,
       items: req.body.items,
       buyer: userPayload.userId,
-      orderValue: ''
+      orderValue: 0
     });
     postOrder.save((err) => {
       if (err) console.error(err);
     });
-    const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
-    const getItems = getOrder.items
-    // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
+
+    const getOrder = await Order.findById(postOrder._id).populate('items');
+    const getItems = getOrder.items;
+
+    // En inbyggd forEach loop som adderar ihop priset på alla produkter och ger tillbaka totalsumman av priset.
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
     const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
-    const user = await User.findById(userPayload.userId);
-    user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
-    user.save((err) => {
-      if (err) console.error(err)
-    })
-    res.status(202).json(saveOrder);
+    const account = await User.findById(userPayload.userId);
+    account.orderhistory.push(postOrder._id);
+    account.save((err) => {
+      err ? console.error(err) : res.status(202).json(saveOrder);
+    });
+
   } else {
-    res.status(403).json({ msg: "Please, log in" });
+    res.status(400).send("Please, log in");
   }
 };
 
@@ -128,7 +135,6 @@ const productById = async (req, res, next) => {
 
 //Tar bort produkt
 const removeProduct = async (req, res, next) => {
-  console.log(req.body, req.params)
   const token = req.cookies["auth-token"];
 
   if (token === tokenInCookies) {
@@ -137,30 +143,30 @@ const removeProduct = async (req, res, next) => {
       const removeProduct = await Product.deleteOne({ _id: req.params.id });
       res.json(removeProduct);
     } else {
-      res.json({ msg: 'Unauthorized' })
+      res.send('Unauthorized')
     }
   } else {
-    res.json({ msg: "Please, log in" });
+    res.send("Please, log in");
   }
 }
 
 // Updaterar produkt
-const updateProduct = async (req, res, next) => { 
-   const token = req.cookies["auth-token"];
-   if (token === tokenInCookies) {
+const updateProduct = async (req, res, next) => {
+  const token = req.cookies["auth-token"];
+  if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     if (userPayload.role == admin) {
-      const modifiedProduct = {...req.body};
+      const modifiedProduct = { ...req.body };
       delete modifiedProduct._id;
       delete modifiedProduct.__v;
-      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct});
+      const updateProduct = await Product.updateOne({ _id: req.params.id }, { $set: modifiedProduct });
       res.json(updateProduct);
     } else {
-      res.json({ msg: 'Unauthorized' })
+      res.send('Unauthorized')
     }
   } else {
-    res.json({ msg: "Please, log in" });
-  } 
+    res.send("Please, log in");
+  }
 }
 
 // Hämtar alla beställningar
@@ -169,10 +175,10 @@ const allOrders = async (req, res, next) => {
   if (token === tokenInCookies) {
     const userPayload = verifyToken(token);
     // Gör så att bara en Admin kan se alla beställningar, men en vanlig användare kan bara se sina egna beställningar.
-    const orders = (userPayload.role == admin) ? await Order.find({}) : await Order.find({ buyer: userPayload.userId });
+    const orders = (userPayload.role === admin) ? await Order.find({}) : await Order.find({ buyer: userPayload.userId });
     res.json(orders);
   } else {
-    res.json({ msg: "Please, log in" });
+    res.send('Please, log in');
   }
 }
 
