@@ -102,10 +102,11 @@ const orders = async (req, res, next) => {
       if (err) console.error(err);
     });
 
-    const getOrder = await Order.findById(postOrder._id).populated('items');
+    const getOrder = await Order.findById(postOrder._id).populate('items');
 
     const getItems = getOrder.items;
 
+    // En inbyggd forEach loop som adderar ihop priset på alla produkter och ger tillbaka totalsumman av priset.
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
@@ -113,22 +114,8 @@ const orders = async (req, res, next) => {
     const account = await User.findById(userPayload.userId);
     account.orderhistory.push(postOrder._id);
     account.save((err) => {
-      console.log('save');
       err ? console.error(err) : res.status(202).json(saveOrder);
     });
-
-
-    // const items = await Product.find({'_id': {$in: req.body.items}});
-    //let items = await Product.find({ _id: { $in: req.body.items } });
-    // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
-    
-    /* for (let i = 0; i < req.body.items.length; i++){
-      for (let j = 0; j < items.length; j++) {
-        if(req.body.items[i] === String(items[j]._id)) {
-          console.log(items._id, items.price);
-        }
-      }
-    } */
     
   } else {
     res.status(400).send("Please, log in");
