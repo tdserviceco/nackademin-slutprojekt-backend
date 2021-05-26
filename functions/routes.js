@@ -9,7 +9,7 @@ const { createToken, deCryptHash, hashGenerator, verifyToken } = require('./meth
 
 // Här registrerar man sitt användarkonto
 const register = async (req, res, next) => {
-  const user = await User.findOne({ 'user.email': req.body.email }); // Försäkrar att användar adressen inte redan är tagen.
+  const user = await User.findOne({ email: req.body.email }); // Försäkrar att användar adressen inte redan är tagen.
 
   if (!user) { // Ifall adressen INTE redan är registrerad, så kan den användas
     const newUser = new User({
@@ -19,7 +19,10 @@ const register = async (req, res, next) => {
       adress: req.body.adress
     });
     newUser.save((err) => {
-      err ? res.status(400).send(err) : res.status(202).json(newUser)
+      const token = createToken(newUser);
+      res.cookie('auth-token', token);
+      tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
+      err ? res.status(400).send(err) : res.status(202).json({user: newUser})
     })
   }
   else {
@@ -28,36 +31,31 @@ const register = async (req, res, next) => {
 }
 
 const auth = async (req, res, next) => {
-  const account = await User.findOne({
-    'user.email': req.body.email
+  const user = await User.findOne({
+    email: req.body.email
   });
 
-  if (!account) { // Försäkrar att användaren inte är icke-existerande (Null)
+  if (!user) { // Försäkrar att användaren inte är icke-existerande (Null)
     res.status(400).send("Login failed. Invalid credentials.")
 
   }
   else {
-    let password = await deCryptHash(req.body.password, account.user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
+    let password = await deCryptHash(req.body.password, user.password) //Kollar så att användarens krypterade lösenord matchar det angivna.
 
     if (password) {
-      const token = createToken(account);
+      const token = createToken(user);
       res.cookie('auth-token', token);
       tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
 
-      /** Vi kopierar ny användare och sedan exkluderar 
-       *  password-fältet för vi vill inte visa 
-       *  den på frontend delen. 
-       * */
-      const copyAccount = await User.findOne({ 'user.email': account.user.email }).select(['-password']);
       res.status(202).json({
         token: token,
         user: {
-          name: copyAccount.user.name,
-          role: copyAccount.user.role,
+          name: user.name,
+          role: user.role,
           adress: {
-            street: copyAccount.user.adress.street,
-            zip: copyAccount.user.adress.zip,
-            city: copyAccount.user.adress.city
+            street: user.adress.street,
+            zip: user.adress.zip,
+            city: user.adress.city
           }
         }
       });
@@ -100,23 +98,38 @@ const orders = async (req, res, next) => {
       buyer: userPayload.userId,
       orderValue: 0
     });
-
     postOrder.save((err) => {
       if (err) console.error(err);
     });
 
-    const getOrder = await Order.findById(postOrder._id).populate('items') // Hämtar samma order-objekt efter att den sparats
-    const getItems = getOrder.items
-    // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
+    const getOrder = await Order.findById(postOrder._id).populated('items');
+
+    const getItems = getOrder.items;
+
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
-    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
+    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, {$set:{orderValue: totalPrice}});
     const account = await User.findById(userPayload.userId);
-    account.user.orderhistory.push(postOrder._id); // Updaterar användarens order history.
+    account.orderhistory.push(postOrder._id);
     account.save((err) => {
-      err ? console.error(err) : res.status(202).json(saveOrder)
-    })
+      console.log('save');
+      err ? console.error(err) : res.status(202).json(saveOrder);
+    });
+
+
+    // const items = await Product.find({'_id': {$in: req.body.items}});
+    //let items = await Product.find({ _id: { $in: req.body.items } });
+    // En inbyggd forEach-loop som adderar ihop priset på alla items och ger ett totalpris
+    
+    /* for (let i = 0; i < req.body.items.length; i++){
+      for (let j = 0; j < items.length; j++) {
+        if(req.body.items[i] === String(items[j]._id)) {
+          console.log(items._id, items.price);
+        }
+      }
+    } */
+    
   } else {
     res.status(400).send("Please, log in");
   }
