@@ -22,7 +22,7 @@ const register = async (req, res, next) => {
       const token = createToken(newUser);
       res.cookie('auth-token', token);
       tokenInCookies = token; // Gör en kopia på token, så den kan granskas i andra routes.
-      err ? res.status(400).send(err) : res.status(202).json({user: newUser})
+      err ? res.status(400).send(err) : res.status(202).json({ user: newUser })
     })
   }
   else {
@@ -103,20 +103,19 @@ const orders = async (req, res, next) => {
     });
 
     const getOrder = await Order.findById(postOrder._id).populate('items');
-
     const getItems = getOrder.items;
 
     // En inbyggd forEach loop som adderar ihop priset på alla produkter och ger tillbaka totalsumman av priset.
     let totalPrice = getItems.reduce((acc, current) => {
       return acc + current.price
     }, 0)
-    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, {$set:{orderValue: totalPrice}});
+    const saveOrder = await Order.findByIdAndUpdate(postOrder._id, { $set: { orderValue: totalPrice } });
     const account = await User.findById(userPayload.userId);
     account.orderhistory.push(postOrder._id);
     account.save((err) => {
       err ? console.error(err) : res.status(202).json(saveOrder);
     });
-    
+
   } else {
     res.status(400).send("Please, log in");
   }
