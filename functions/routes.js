@@ -21,11 +21,11 @@ const register = async (req, res, next) => {
       }
     });
     newUser.save((err) => {
-      err ? res.status(403).send(err) : res.status(202).json(newUser)
+      err ? res.status(400).send(err) : res.status(202).json(newUser)
     })
   }
   else {
-    res.status(403).send("Email already taken");
+    res.status(400).send("Email already taken");
   }
 }
 
@@ -35,7 +35,7 @@ const auth = async (req, res, next) => {
   });
 
   if (!account) { // Försäkrar att användaren inte är icke-existerande (Null)
-    res.status(403).send("Login failed. Invalid credentials.")
+    res.status(400).send("Login failed. Invalid credentials.")
 
   }
   else {
@@ -64,7 +64,7 @@ const auth = async (req, res, next) => {
         }
       });
     } else {
-      res.status(403).send('Login failed. Invalid credentials.');
+      res.status(400).send('Login failed. Invalid credentials.');
     }
   }
 };
@@ -83,13 +83,13 @@ const products = async (req, res, next) => {
         serial: req.body.serial
       })
       newProduct.save((err) => {
-        err ? res.status(403).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
+        err ? res.status(400).send(err) : res.status(202).json({ product: newProduct }); //Fronted-delen letar efter ett objekt som kallas "product".
       });
     } else {
-      res.status(403).send('Unauthorized');
+      res.status(400).send('Unauthorized');
     }
   } else {
-    res.status(403).send('Please, log in')
+    res.status(400).send('Please, log in')
   }
 }
 
@@ -120,7 +120,7 @@ const orders = async (req, res, next) => {
       err ? console.error(err) : res.status(202).json(saveOrder)
     })
   } else {
-    res.status(403).send("Please, log in");
+    res.status(400).send("Please, log in");
   }
 };
 
